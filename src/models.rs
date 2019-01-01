@@ -3,7 +3,7 @@ use super::schema::piles;
 
 #[derive(Identifiable, Insertable, Queryable, AsChangeset, PartialEq, Debug)]
 #[table_name="decks"]
-pub struct Deck {
+pub struct DeckData {
     pub id: String,
     pub cards: String
 }
@@ -11,7 +11,7 @@ pub struct Deck {
 #[derive(Identifiable, Insertable, Queryable, Associations, PartialEq, Debug)]
 #[belongs_to(Deck)]
 #[table_name="piles"]
-pub struct Pile {
+pub struct PileData {
     pub id: String,
     pub deck_id: String,
     pub name: String,
