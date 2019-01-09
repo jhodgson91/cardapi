@@ -31,8 +31,11 @@ pub trait CardCollection {
     fn remaining(&self) -> usize {
         self.cards().len()
     }
+    fn has_card(&self, c: &Card) -> bool {
+        self.cards().contains(c)
+    }
     fn load( db: &SqliteConnection, id: &str) -> QueryResult<Self>
     where
         Self: std::marker::Sized;
-    fn save(&self, db: &SqliteConnection) -> QueryResult<usize>;
+    fn save(&self, db: &SqliteConnection) -> Result<(), super::common::CardAPIError>;
 }

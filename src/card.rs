@@ -12,7 +12,7 @@ pub struct Card {
     pub value: CardValue,
 }
 
-impl std::fmt::Display for Card {
+impl std::fmt::Debug for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.to_str())
     }
