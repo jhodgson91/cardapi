@@ -19,10 +19,9 @@ mod cardcollection;
 mod cardselection;
 mod cardsuit;
 mod cardvalue;
+mod deck;
 mod models;
 mod schema;
-mod deck;
-mod pile;
 mod common {
     pub trait HasStringCode {
         fn from_str(s: String) -> Option<Self>
@@ -59,7 +58,6 @@ use diesel::prelude::*;
 
 use card::Card;
 use deck::Deck;
-use pile::Pile;
 
 use cardcollection::*;
 use cardselection::*;
@@ -75,16 +73,9 @@ pub fn init_pool() -> Pool {
     Pool::new(manager).expect("DB Pool")
 }
 
+
 fn main() {
     let pool = init_pool();
     let conn = pool.get().unwrap();
 
-    let mut deck = Deck::load(&conn, "vtCuEZlinJTL").expect("Failed to make the deck!");
-    if let Some(p) = deck.get_pile(&"discard".to_string()) {
-        let c = Card::from_str("AS".to_string()).unwrap();
-        println!("{:?}", deck.has_card(&c));
-    } else {
-        deck.new_pile(&conn, "discard".to_string());
-    }
-    println!("{:?}", deck);
 }
