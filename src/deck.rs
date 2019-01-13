@@ -4,9 +4,7 @@ use super::common;
 use super::models;
 use super::schema;
 
-use super::card::*;
-use super::cardcollection::*;
-use super::cardselection::*;
+use super::cards::*;
 
 use std::collections::HashMap;
 
@@ -21,7 +19,7 @@ impl Deck {
     pub fn new(selection: CardSelection) -> Result<Deck, common::CardAPIError> {
         let result = Deck {
             _id: Deck::new_id(),
-            _cards: CardCollection::from_selection(selection),
+            _cards: CardCollection::from(selection),
             _piles: HashMap::new(),
         };
 
@@ -69,4 +67,3 @@ impl Deck {
             .collect()
     }
 }
-

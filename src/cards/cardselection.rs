@@ -1,12 +1,10 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-use super::card::*;
-use super::cardsuit::*;
-use super::cardvalue::*;
-use super::common::*;
+use super::*;
 
 pub enum CardSelection {
+    Empty,
     All(bool),
     Top(usize),
     Bottom(usize),
@@ -32,6 +30,7 @@ impl CardSelection {
 
     pub fn filter_cards(cards: &Vec<Card>, selection: CardSelection) -> Vec<Card> {
         match selection {
+            CardSelection::Empty => Vec::new(),
             CardSelection::All(shuffled) => CardSelection::apply_all(cards, shuffled),
             CardSelection::Random(n) => CardSelection::apply_random(cards, n),
             CardSelection::Bottom(n) => CardSelection::apply_bottom(cards, n),
