@@ -5,7 +5,7 @@ pub enum CardSuit {
     Hearts,
     Clubs,
     Spades,
-    Diamonds
+    Diamonds,
 }
 
 impl HasStringCode for CardSuit {
@@ -15,7 +15,7 @@ impl HasStringCode for CardSuit {
             "C" => Some(CardSuit::Clubs),
             "S" => Some(CardSuit::Spades),
             "D" => Some(CardSuit::Diamonds),
-            _ => None
+            _ => None,
         }
     }
 
@@ -24,7 +24,7 @@ impl HasStringCode for CardSuit {
             CardSuit::Hearts => "H",
             CardSuit::Clubs => "C",
             CardSuit::Spades => "S",
-            CardSuit::Diamonds => "D"
+            CardSuit::Diamonds => "D",
         };
         s.to_string()
     }

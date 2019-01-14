@@ -1,7 +1,7 @@
 use super::*;
 
-use serde::*;
 use serde::de::*;
+use serde::*;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Card {
@@ -26,7 +26,7 @@ impl HasStringCode for Card {
             false => Some(Card {
                 value: CardValue::from_str(code.chars().nth(0)?.to_string())?,
                 suit: CardSuit::from_str(code.chars().nth(1)?.to_string())?,
-            })
+            }),
         }
     }
 }
@@ -49,15 +49,14 @@ impl<'de> Visitor<'de> for CardVisitor {
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-        where 
+    where
         E: de::Error,
     {
         match Card::from_str(value.to_string()) {
             Some(card) => Ok(card),
-            None => Err(E::custom("Invalid card code"))
+            None => Err(E::custom("Invalid card code")),
         }
     }
-
 }
 
 impl<'de> Deserialize<'de> for Card {

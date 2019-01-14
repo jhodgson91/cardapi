@@ -14,11 +14,10 @@ pub enum CardValue {
     Ten,
     Jack,
     Queen,
-    King
+    King,
 }
 
 impl HasStringCode for CardValue {
-
     fn to_str(&self) -> String {
         let s = match self {
             CardValue::Ace => "A",
@@ -33,7 +32,7 @@ impl HasStringCode for CardValue {
             CardValue::Ten => "0",
             CardValue::Jack => "J",
             CardValue::Queen => "Q",
-            CardValue::King => "K"
+            CardValue::King => "K",
         };
         s.to_string()
     }
@@ -53,7 +52,7 @@ impl HasStringCode for CardValue {
             "J" => Some(CardValue::Jack),
             "Q" => Some(CardValue::Queen),
             "K" => Some(CardValue::King),
-            _ => None
+            _ => None,
         }
     }
 }

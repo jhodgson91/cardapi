@@ -24,7 +24,7 @@ impl CardSelection {
                 .iter()
                 .map(|card| Card::from_str(card.to_string()).unwrap())
                 .collect(),
-            selection
+            selection,
         )
     }
 
