@@ -3,6 +3,9 @@ use super::cardselection::*;
 use super::card::Card;
 use std::slice::Iter;
 
+use rocket::http::{Status, RawStr};
+use rocket::request::{Request, FromFormValue, Outcome};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CardCollection {
     pub(super) _cards: Vec<Card>,
@@ -50,5 +53,13 @@ impl From<CardSelection> for CardCollection {
         CardCollection {
             _cards: CardSelection::from_all(selection),
         }
+    }
+}
+
+impl<'v> FromFormValue<'v> for CardCollection {
+    type Error = super::CardAPIError;
+
+    fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
+        Ok(CardCollection::new())
     }
 }

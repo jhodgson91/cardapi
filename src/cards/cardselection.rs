@@ -10,8 +10,8 @@ pub enum CardSelection {
     Bottom(usize),
     Random(usize),
     Filter {
-        suits: Vec<CardSuit>,
-        values: Vec<CardValue>,
+        suits: StringCodes<CardSuit>,
+        values: StringCodes<CardValue>
     },
     Cards(Vec<Card>),
 }
@@ -76,7 +76,7 @@ impl CardSelection {
         cards[0..end].to_vec()
     }
 
-    fn apply_filter(cards: &Vec<Card>, suits: Vec<CardSuit>, values: Vec<CardValue>) -> Vec<Card> {
+    fn apply_filter(cards: &Vec<Card>, suits: StringCodes<CardSuit>, values: StringCodes<CardValue>) -> Vec<Card> {
         cards
             .iter()
             .filter(|c| {

@@ -1,5 +1,26 @@
-#![feature(uniform_paths)]
+#![feature(uniform_paths, proc_macro_hygiene, decl_macro)]
 #![allow(warnings)]
+
+#[macro_use]
+extern crate rocket;
+
+#[get("/cards?<suits>&<values>", rank = 1)]
+fn cards_by_filter(suits: StringCodes<CardSuit>, values: StringCodes<CardValue>) -> String {
+    let cards = CardSelection::from_all(CardSelection::Filter {suits, values});
+    format!("Cards: {:?}", cards)
+}
+
+#[get("/cards?<suits>", rank = 2)]
+fn cards_by_suit(suits: StringCodes<CardSuit>) -> String {
+    let cards = CardSelection::from_all(CardSelection::Filter {suits, values: StringCodes::new()});
+    format!("Cards: {:?}", cards)
+}
+
+#[get("/cards?<values>", rank = 3)]
+fn cards_by_value(values: StringCodes<CardValue>) -> String{
+    let cards = CardSelection::from_all(CardSelection::Filter {suits: StringCodes::new(), values});
+    format!("Cards: {:?}", cards)
+}
 
 #[macro_use]
 extern crate serde_derive;
@@ -19,6 +40,10 @@ mod game;
 mod models;
 mod schema;
 mod common {
+
+    use rocket::request::FromFormValue;
+    use rocket::http::RawStr;
+
     #[derive(Debug)]
     pub enum CardAPIError {
         DieselError(diesel::result::Error),
@@ -40,6 +65,44 @@ mod common {
         where
             Self: std::marker::Sized;
         fn to_str(&self) -> String;
+    }
+
+    use std::fmt::Debug;
+
+    #[derive(Debug)]
+    pub struct StringCodes<T: HasStringCode> {
+        _inner: Vec<T>,
+    }
+
+    impl<T: HasStringCode + Eq> StringCodes<T> {
+        pub fn new() -> Self {
+            StringCodes { _inner: Vec::new() }
+        }
+
+        pub fn from_str(s: String) -> Option<Self> {
+            let codes: Vec<&str> = s.split(",").collect();
+            let mut result: Vec<T> = Vec::new();
+            for code in codes {
+                result.push(T::from_str(code.to_string())?);
+            }
+            Some(StringCodes { _inner: result })
+        }
+
+        pub fn contains(&self, other: &T) -> bool {
+            self._inner.contains(other)
+        }
+
+        pub fn len(&self) -> usize {
+            self._inner.len()
+        }
+    }
+
+    impl<'v, T: HasStringCode + Eq> FromFormValue<'v> for StringCodes<T> {
+        type Error = super::CardAPIError;
+
+        fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
+            StringCodes::from_str(form_value.to_string()).ok_or(super::CardAPIError::NotFound)
+        }
     }
 
     pub const CARD_CODES: &'static [&str] = &[
@@ -70,14 +133,10 @@ fn main() {
     let pool = init_pool();
     let conn = pool.get().unwrap();
 
-    let mut game = Game::new();
-    game.new_pile("discard".to_string());
-    println!("{:?}", game);
-    game.move_cards(
-        CollectionType::Deck,
-        CollectionType::Pile("discard".to_string()),
-        CardSelection::Random(10),
-    );
+    let s = StringCodes::<Card>::from_str("AH,2C".to_string()).unwrap();
+    println!("{:?}", s);
 
-    println!("{:?}", game);
+    rocket::ignite().mount("/", routes![cards_by_filter, cards_by_suit, cards_by_value]).launch();
+
+
 }
