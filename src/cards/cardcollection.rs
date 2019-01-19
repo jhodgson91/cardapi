@@ -3,8 +3,8 @@ use super::cardselection::*;
 use super::card::Card;
 use std::slice::Iter;
 
-use rocket::http::{Status, RawStr};
-use rocket::request::{Request, FromFormValue, Outcome};
+use rocket::http::RawStr;
+use rocket::request::FromFormValue;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CardCollection {

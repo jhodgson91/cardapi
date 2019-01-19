@@ -1,6 +1,8 @@
 use super::schema::decks;
 use super::schema::piles;
 
+use diesel::prelude::*;
+
 #[derive(Identifiable, Insertable, Queryable, AsChangeset, PartialEq, Debug)]
 #[table_name = "decks"]
 pub struct Deck {

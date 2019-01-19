@@ -11,7 +11,7 @@ pub enum CardSelection {
     Random(usize),
     Filter {
         suits: StringCodes<CardSuit>,
-        values: StringCodes<CardValue>
+        values: StringCodes<CardValue>,
     },
     Cards(Vec<Card>),
 }
@@ -47,12 +47,13 @@ impl CardSelection {
     }
 
     fn apply_all(cards: &Vec<Card>, shuffled: bool) -> Vec<Card> {
-        match shuffled {
-            true => cards
+        if shuffled {
+            cards
                 .choose_multiple(&mut thread_rng(), cards.len())
                 .cloned()
-                .collect(),
-            false => cards.to_owned(),
+                .collect()
+        } else {
+            cards.to_owned()
         }
     }
 
@@ -64,10 +65,7 @@ impl CardSelection {
     }
 
     fn apply_top(cards: &Vec<Card>, n: usize) -> Vec<Card> {
-        let start = match n > cards.len() {
-            true => 0,
-            false => cards.len() - n,
-        };
+        let start = if n > cards.len() { 0 } else { cards.len() - n };
         cards[start..cards.len()].to_vec()
     }
 
@@ -76,7 +74,11 @@ impl CardSelection {
         cards[0..end].to_vec()
     }
 
-    fn apply_filter(cards: &Vec<Card>, suits: StringCodes<CardSuit>, values: StringCodes<CardValue>) -> Vec<Card> {
+    fn apply_filter(
+        cards: &Vec<Card>,
+        suits: StringCodes<CardSuit>,
+        values: StringCodes<CardValue>,
+    ) -> Vec<Card> {
         cards
             .iter()
             .filter(|c| {

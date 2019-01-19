@@ -2,8 +2,6 @@ use super::cards::*;
 use super::game::*;
 use super::stringcode::StringCodes;
 
-use rocket_contrib::json::JsonValue;
-
 #[get("/game/<id>")]
 pub fn get_game(id: String) -> String {
     serde_json::to_string_pretty(&Game::new()).unwrap()

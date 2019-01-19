@@ -21,12 +21,13 @@ impl HasStringCode for Card {
     }
 
     fn from_str(code: String) -> Option<Card> {
-        match code.len() > 2 {
-            true => None,
-            false => Some(Card {
+        if code.len() > 2 {
+            None
+        } else {
+            Some(Card {
                 value: CardValue::from_str(code.chars().nth(0)?.to_string())?,
                 suit: CardSuit::from_str(code.chars().nth(1)?.to_string())?,
-            }),
+            })
         }
     }
 }

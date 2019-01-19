@@ -1,4 +1,4 @@
-#![feature(uniform_paths, proc_macro_hygiene, decl_macro)]
+#![feature(proc_macro_hygiene, decl_macro)]
 #![allow(warnings)]
 
 #[macro_use]

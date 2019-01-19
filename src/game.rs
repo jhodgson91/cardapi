@@ -2,7 +2,7 @@ use super::*;
 
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub enum CollectionType {
     Deck,
@@ -37,31 +37,31 @@ impl Game {
         if self.has_collection(&from) && self.has_collection(&to) {
             let cards = CardCollection::from(selection);
             {
-                let mut fromCollection = match from {
+                let mut from_collection = match from {
                     CollectionType::Deck => &mut self.deck,
                     CollectionType::Pile(name) => self
                         .piles
                         .get_mut(&name)
                         .ok_or(common::CardAPIError::NotFound)?,
                 };
-                fromCollection.remove(&cards);
+                from_collection.remove(&cards);
             }
             {
-                let mut toCollection = match to {
+                let mut to_collection = match to {
                     CollectionType::Deck => &mut self.deck,
                     CollectionType::Pile(name) => self
                         .piles
                         .get_mut(&name)
                         .ok_or(common::CardAPIError::NotFound)?,
                 };
-                toCollection.add(cards);
+                to_collection.add(cards);
             }
         }
 
         Ok(())
     }
 
-    pub fn has_collection(&self, collection: &CollectionType) -> bool {
+    fn has_collection(&self, collection: &CollectionType) -> bool {
         match collection {
             CollectionType::Deck => true,
             CollectionType::Pile(name) => self.piles.get(name).is_some(),
