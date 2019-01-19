@@ -63,10 +63,10 @@ fn main() {
                 api::routes::cards_top,
                 api::routes::cards_bottom,
                 api::routes::get_game,
+                api::routes::get_pile,
+                api::routes::get_deck,
                 api::routes::new_game,
             ],
         )
         .launch();
-
-    let t = json!({"id": "Helo"});
 }

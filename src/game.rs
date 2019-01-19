@@ -16,7 +16,8 @@ pub enum CollectionType {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Game {
     pub id: String,
-    deck: CardCollection,
+
+    pub deck: CardCollection,
     piles: HashMap<String, CardCollection>,
 }
 
@@ -27,10 +28,6 @@ impl Game {
             deck: CardCollection::from(CardSelection::All(true)),
             piles: HashMap::new(),
         }
-    }
-
-    pub fn new_pile(&mut self, name: String) {
-        self.piles.insert(name, CardCollection::new());
     }
 
     pub fn move_cards(
@@ -62,6 +59,18 @@ impl Game {
         }
 
         Ok(())
+    }
+
+    pub fn new_pile(&mut self, name: String) {
+        self.piles.insert(name, CardCollection::new());
+    }
+
+    pub fn get_pile(&self, name: &String) -> Option<&CardCollection> {
+        self.piles.get(name)
+    }
+
+    pub fn has_pile(&self, name: &String) -> bool {
+        self.get_pile(name).is_some()
     }
 
     fn has_collection(&self, collection: &CollectionType) -> bool {

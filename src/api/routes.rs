@@ -5,6 +5,8 @@ use super::stringcode::StringCodes;
 
 use super::common::*;
 
+use rocket_contrib::json::JsonValue;
+
 #[get("/game/new")]
 pub fn new_game(conn: GamesDbConn) -> String {
     let g = Game::new();
@@ -13,8 +15,32 @@ pub fn new_game(conn: GamesDbConn) -> String {
 }
 
 #[get("/game/<id>")]
-pub fn get_game(conn: GamesDbConn, id: String) -> String {
-    serde_json::to_string_pretty(&Game::load(&conn, id).unwrap()).unwrap()
+pub fn get_game(conn: GamesDbConn, id: String) -> Option<JsonValue> {
+    let game = Game::load(&conn, id).ok()?;
+    let a = serde_json::to_value(game).ok()?;
+    Some(JsonValue::from(a))
+}
+
+#[get("/game/<id>/deck", rank = 1)]
+pub fn get_deck(conn: GamesDbConn, id: String) -> Option<JsonValue> {
+    let game = Game::load(&conn, id).ok()?;
+    Some(json!({
+        "deck": game.deck.cards()
+    }))
+}
+
+#[get("/game/<id>/<name>", rank = 2)]
+pub fn get_pile(conn: GamesDbConn, id: String, name: String) -> Option<JsonValue> {
+    let mut game = Game::load(&conn, id).ok()?;
+    let pile = if game.has_pile(&name) {
+        game.get_pile(&name)
+    } else {
+        game.new_pile(name.clone());
+        game.save(&conn);
+        game.get_pile(&name)
+    }?;
+
+    Some(json!({name: pile.cards()}))
 }
 
 #[get("/cards?<top>", rank = 1)]
