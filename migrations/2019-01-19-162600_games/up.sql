@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE decks (
+CREATE TABLE games (
     id VARCHAR(12) NOT NULL PRIMARY KEY,
-    cards VARCHAR NOT NULL
+    json VARCHAR NOT NULL
 )

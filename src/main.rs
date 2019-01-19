@@ -49,6 +49,12 @@ mod common {
         "5C", "6C", "7C", "8C", "9C", "0C", "JC", "QC", "KC", "AH", "2H", "3H", "4H", "5H", "6H",
         "7H", "8H", "9H", "0H", "JH", "QH", "KH",
     ];
+
+    use rocket_contrib::databases::diesel;
+
+    #[database("sqlite_games")]
+    pub struct GamesDbConn(diesel::SqliteConnection);
+
 }
 
 use diesel::prelude::*;
@@ -56,6 +62,7 @@ use diesel::prelude::*;
 use cards::*;
 use common::*;
 use game::*;
+use models::HasModel;
 use stringcode::*;
 
 type Pool = r2d2::Pool<r2d2::ConnectionManager<SqliteConnection>>;
@@ -69,10 +76,8 @@ pub fn init_pool() -> Pool {
 }
 
 fn main() {
-    let pool = init_pool();
-    let conn = pool.get().unwrap();
-
     rocket::ignite()
+        .attach(common::GamesDbConn::fairing())
         .mount(
             "/",
             routes![
@@ -82,7 +87,8 @@ fn main() {
                 api::routes::cards_random,
                 api::routes::cards_top,
                 api::routes::cards_bottom,
-                api::routes::get_game
+                api::routes::get_game,
+                api::routes::new_game,
             ],
         )
         .launch();

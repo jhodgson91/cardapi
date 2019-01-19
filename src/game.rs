@@ -4,10 +4,13 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use super::models;
+
 pub enum CollectionType {
     Deck,
     Pile(String),
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Game {
     pub id: String,
@@ -78,5 +81,40 @@ impl Game {
             .choose_multiple(&mut thread_rng(), 12)
             .iter()
             .collect()
+    }
+}
+
+impl models::HasModel for Game {
+    type Model = models::Game;
+
+    fn from_model(m: Self::Model) -> Self {
+        serde_json::from_str::<Game>(&m.json).unwrap()
+    }
+    fn to_model(&self) -> Self::Model {
+        models::Game {
+            id: self.id.clone(),
+            json: serde_json::to_string(self).unwrap(),
+        }
+    }
+
+    fn save(&self, conn: &SqliteConnection) -> QueryResult<usize> {
+        use diesel::dsl::*;
+        use schema::games::dsl::*;
+        if select(exists(games.find(self.id.clone()))).get_result(conn)? {
+            update(games.find(self.id.clone()))
+                .set(self.to_model())
+                .execute(conn)
+        } else {
+            insert_into(games).values(self.to_model()).execute(conn)?;
+            Ok(1)
+        }
+    }
+
+    fn load(conn: &SqliteConnection, id: String) -> QueryResult<Self> {
+        use schema::games::dsl::games;
+
+        Ok(Self::from_model(
+            games.find(id).get_result::<models::Game>(conn)?,
+        ))
     }
 }

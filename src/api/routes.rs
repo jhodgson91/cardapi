@@ -1,10 +1,20 @@
 use super::cards::*;
 use super::game::*;
+use super::models::HasModel;
 use super::stringcode::StringCodes;
 
+use super::common::*;
+
+#[get("/game/new")]
+pub fn new_game(conn: GamesDbConn) -> String {
+    let g = Game::new();
+    g.save(&conn);
+    serde_json::to_string_pretty(&g).unwrap()
+}
+
 #[get("/game/<id>")]
-pub fn get_game(id: String) -> String {
-    serde_json::to_string_pretty(&Game::new()).unwrap()
+pub fn get_game(conn: GamesDbConn, id: String) -> String {
+    serde_json::to_string_pretty(&Game::load(&conn, id).unwrap()).unwrap()
 }
 
 #[get("/cards?<top>", rank = 1)]

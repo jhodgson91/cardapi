@@ -1,21 +1,22 @@
-use super::schema::decks;
-use super::schema::piles;
+use super::schema::games;
 
 use diesel::prelude::*;
 
-#[derive(Identifiable, Insertable, Queryable, AsChangeset, PartialEq, Debug)]
-#[table_name = "decks"]
-pub struct Deck {
-    pub id: String,
-    pub cards: String,
+pub trait HasModel {
+    type Model;
+
+    fn load(conn: &SqliteConnection, id: String) -> QueryResult<Self>
+    where
+        Self: std::marker::Sized;
+    fn save(&self, conn: &SqliteConnection) -> QueryResult<usize>;
+
+    fn from_model(m: Self::Model) -> Self;
+    fn to_model(&self) -> Self::Model;
 }
 
-#[derive(Identifiable, Insertable, Queryable, AsChangeset, Associations, PartialEq, Debug)]
-#[belongs_to(Deck)]
-#[table_name = "piles"]
-pub struct Pile {
+#[derive(Identifiable, Insertable, Queryable, AsChangeset, PartialEq, Debug)]
+#[table_name = "games"]
+pub struct Game {
     pub id: String,
-    pub name: String,
-    pub deck_id: String,
-    pub cards: String,
+    pub json: String,
 }
