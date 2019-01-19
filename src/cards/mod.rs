@@ -14,3 +14,4 @@ mod cardvalue;
 pub use cardvalue::CardValue;
 
 use super::common::*;
+use super::stringcode::*;

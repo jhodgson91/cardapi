@@ -2,28 +2,30 @@ use super::*;
 
 use std::collections::HashMap;
 
+use serde::{Serialize, Deserialize};
+
 pub enum CollectionType {
     Deck,
     Pile(String),
 }
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Game {
-    _id: String,
-    _deck: CardCollection,
-    _piles: HashMap<String, CardCollection>,
+    pub id: String,
+    deck: CardCollection,
+    piles: HashMap<String, CardCollection>,
 }
 
 impl Game {
     pub fn new() -> Game {
         Game {
-            _id: Game::new_id(),
-            _deck: CardCollection::from(CardSelection::All(true)),
-            _piles: HashMap::new(),
+            id: Game::new_id(),
+            deck: CardCollection::from(CardSelection::All(true)),
+            piles: HashMap::new(),
         }
     }
 
     pub fn new_pile(&mut self, name: String) {
-        self._piles.insert(name, CardCollection::new());
+        self.piles.insert(name, CardCollection::new());
     }
 
     pub fn move_cards(
@@ -36,9 +38,9 @@ impl Game {
             let cards = CardCollection::from(selection);
             {
                 let mut fromCollection = match from {
-                    CollectionType::Deck => &mut self._deck,
+                    CollectionType::Deck => &mut self.deck,
                     CollectionType::Pile(name) => self
-                        ._piles
+                        .piles
                         .get_mut(&name)
                         .ok_or(common::CardAPIError::NotFound)?,
                 };
@@ -46,9 +48,9 @@ impl Game {
             }
             {
                 let mut toCollection = match to {
-                    CollectionType::Deck => &mut self._deck,
+                    CollectionType::Deck => &mut self.deck,
                     CollectionType::Pile(name) => self
-                        ._piles
+                        .piles
                         .get_mut(&name)
                         .ok_or(common::CardAPIError::NotFound)?,
                 };
@@ -62,7 +64,7 @@ impl Game {
     pub fn has_collection(&self, collection: &CollectionType) -> bool {
         match collection {
             CollectionType::Deck => true,
-            CollectionType::Pile(name) => self._piles.get(name).is_some(),
+            CollectionType::Pile(name) => self.piles.get(name).is_some(),
         }
     }
 

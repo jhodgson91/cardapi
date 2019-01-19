@@ -8,26 +8,26 @@ use rocket::request::{Request, FromFormValue, Outcome};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CardCollection {
-    pub(super) _cards: Vec<Card>,
+    pub(super) cards: Vec<Card>,
 }
 
 impl CardCollection {
     pub fn new() -> CardCollection {
-        CardCollection { _cards: Vec::new() }
+        CardCollection { cards: Vec::new() }
     }
     pub fn select(&self, selection: CardSelection) -> Vec<Card> {
-        CardSelection::filter_cards(&self._cards, selection)
+        CardSelection::filter_cards(&self.cards, selection)
     }
     pub fn remaining(&self) -> usize {
-        self._cards.len()
+        self.cards.len()
     }
     pub fn contains(&self, c: &Card) -> bool {
-        self._cards.contains(c)
+        self.cards.contains(c)
     }
     pub fn add(&mut self, cards: CardCollection) {
         self.remove(&cards);
-        self._cards = self
-            ._cards
+        self.cards = self
+            .cards
             .iter()
             .chain(cards.iter())
             .map(|c| c.to_owned())
@@ -35,8 +35,8 @@ impl CardCollection {
     }
 
     pub fn remove(&mut self, cards: &CardCollection) {
-        self._cards = self
-            ._cards
+        self.cards = self
+            .cards
             .iter()
             .filter(|c| !cards.contains(c))
             .cloned()
@@ -44,14 +44,14 @@ impl CardCollection {
     }
 
     pub fn iter(&self) -> Iter<Card> {
-        self._cards.iter()
+        self.cards.iter()
     }
 }
 
 impl From<CardSelection> for CardCollection {
     fn from(selection: CardSelection) -> Self {
         CardCollection {
-            _cards: CardSelection::from_all(selection),
+            cards: CardSelection::from_all(selection),
         }
     }
 }
