@@ -10,15 +10,8 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde;
-extern crate serde_json;
-
 #[macro_use]
 extern crate diesel;
-
-use diesel::prelude::*;
-use diesel::r2d2;
-use diesel::sqlite::SqliteConnection;
 
 mod api;
 mod cards;
@@ -57,24 +50,6 @@ mod common {
 
 }
 
-use diesel::prelude::*;
-
-use cards::*;
-use common::*;
-use game::*;
-use models::HasModel;
-use stringcode::*;
-
-type Pool = r2d2::Pool<r2d2::ConnectionManager<SqliteConnection>>;
-
-pub fn init_pool() -> Pool {
-    dotenv::dotenv().ok();
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let manager = r2d2::ConnectionManager::<SqliteConnection>::new(database_url);
-    Pool::new(manager).expect("DB Pool")
-}
-
 fn main() {
     rocket::ignite()
         .attach(common::GamesDbConn::fairing())
@@ -92,4 +67,6 @@ fn main() {
             ],
         )
         .launch();
+
+    let t = json!({"id": "Helo"});
 }

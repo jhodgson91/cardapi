@@ -1,4 +1,3 @@
-
 use rocket::http::RawStr;
 use rocket::request::FromFormValue;
 
@@ -38,9 +37,9 @@ impl<T: HasStringCode + Eq> StringCodes<T> {
 }
 
 impl<'v, T: HasStringCode + Eq> FromFormValue<'v> for StringCodes<T> {
-    type Error = super::CardAPIError;
+    type Error = super::common::CardAPIError;
 
     fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
-        StringCodes::from_str(form_value.to_string()).ok_or(super::CardAPIError::NotFound)
+        StringCodes::from_str(form_value.to_string()).ok_or(super::common::CardAPIError::NotFound)
     }
 }

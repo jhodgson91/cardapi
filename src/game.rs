@@ -1,10 +1,12 @@
-use super::*;
+use super::cards::*;
+use super::common::*;
+use super::models;
 
-use std::collections::HashMap;
+use diesel::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
-use super::models;
+use std::collections::HashMap;
 
 pub enum CollectionType {
     Deck,
@@ -36,26 +38,24 @@ impl Game {
         from: CollectionType,
         to: CollectionType,
         selection: CardSelection,
-    ) -> Result<(), common::CardAPIError> {
+    ) -> Result<(), CardAPIError> {
         if self.has_collection(&from) && self.has_collection(&to) {
             let cards = CardCollection::from(selection);
             {
                 let mut from_collection = match from {
                     CollectionType::Deck => &mut self.deck,
-                    CollectionType::Pile(name) => self
-                        .piles
-                        .get_mut(&name)
-                        .ok_or(common::CardAPIError::NotFound)?,
+                    CollectionType::Pile(name) => {
+                        self.piles.get_mut(&name).ok_or(CardAPIError::NotFound)?
+                    }
                 };
                 from_collection.remove(&cards);
             }
             {
                 let mut to_collection = match to {
                     CollectionType::Deck => &mut self.deck,
-                    CollectionType::Pile(name) => self
-                        .piles
-                        .get_mut(&name)
-                        .ok_or(common::CardAPIError::NotFound)?,
+                    CollectionType::Pile(name) => {
+                        self.piles.get_mut(&name).ok_or(CardAPIError::NotFound)?
+                    }
                 };
                 to_collection.add(cards);
             }
@@ -98,8 +98,9 @@ impl models::HasModel for Game {
     }
 
     fn save(&self, conn: &SqliteConnection) -> QueryResult<usize> {
+        use super::schema::games::dsl::*;
         use diesel::dsl::*;
-        use schema::games::dsl::*;
+
         if select(exists(games.find(self.id.clone()))).get_result(conn)? {
             update(games.find(self.id.clone()))
                 .set(self.to_model())
@@ -111,7 +112,7 @@ impl models::HasModel for Game {
     }
 
     fn load(conn: &SqliteConnection, id: String) -> QueryResult<Self> {
-        use schema::games::dsl::games;
+        use super::schema::games::dsl::games;
 
         Ok(Self::from_model(
             games.find(id).get_result::<models::Game>(conn)?,
