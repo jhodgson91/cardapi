@@ -8,17 +8,16 @@ use super::common::*;
 use rocket_contrib::json::JsonValue;
 
 #[get("/game/new")]
-pub fn new_game(conn: GamesDbConn) -> String {
-    let g = Game::new();
-    g.save(&conn);
-    serde_json::to_string_pretty(&g).unwrap()
+pub fn new_game(conn: GamesDbConn) -> Option<JsonValue> {
+    let game = Game::new();
+    game.save(&conn).ok()?;
+    Some(game.into())
 }
 
 #[get("/game/<id>")]
 pub fn get_game(conn: GamesDbConn, id: String) -> Option<JsonValue> {
     let game = Game::load(&conn, id).ok()?;
-    let a = serde_json::to_value(game).ok()?;
-    Some(JsonValue::from(a))
+    Some(JsonValue::from(serde_json::to_value(game).ok()?))
 }
 
 #[get("/game/<id>/deck", rank = 1)]
@@ -84,3 +83,9 @@ pub fn cards_by_filter(suits: StringCodes<CardSuit>, values: StringCodes<CardVal
     let cards = CardSelection::from_all(CardSelection::Filter { suits, values });
     format!("Cards: {:?}", cards)
 }
+
+/*
+#[post("/cards", format="application/json", data="<cards>")]
+pub fn cards_from_json(cards: CardSelection) {
+
+}*/

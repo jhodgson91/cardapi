@@ -93,6 +93,14 @@ impl Game {
     }
 }
 
+use rocket_contrib::json::JsonValue;
+
+impl std::convert::Into<JsonValue> for Game {
+    fn into(self) -> JsonValue {
+        JsonValue::from(serde_json::to_value(self).unwrap())
+    }
+}
+
 impl models::HasModel for Game {
     type Model = models::Game;
 

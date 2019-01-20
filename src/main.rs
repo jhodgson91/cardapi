@@ -20,6 +20,14 @@ mod models;
 mod schema;
 mod stringcode;
 mod common {
+    use rocket_contrib::json::{JsonError, JsonValue};
+    pub trait HasJsonValue {
+        fn from_json(json: JsonValue) -> Result<Self, JsonError<'static>>
+        where
+            Self: std::marker::Sized;
+        fn to_json(&self) -> JsonValue;
+    }
+
     #[derive(Debug)]
     pub enum CardAPIError {
         DieselError(diesel::result::Error),
@@ -50,23 +58,41 @@ mod common {
 
 }
 
+const json: &'static str = "{
+    \"suits\": [\"C\",\"H\"],
+    \"values\": [\"A\",\"2\"]
+  }";
+
+use serde_json::Value;
+
+use cards::CardSelection;
+use common::HasJsonValue;
+use rocket_contrib::json::JsonValue;
+use stringcode::StringCodes;
 fn main() {
-    rocket::ignite()
-        .attach(common::GamesDbConn::fairing())
-        .mount(
-            "/",
-            routes![
-                api::routes::cards_by_filter,
-                api::routes::cards_by_suit,
-                api::routes::cards_by_value,
-                api::routes::cards_random,
-                api::routes::cards_top,
-                api::routes::cards_bottom,
-                api::routes::get_game,
-                api::routes::get_pile,
-                api::routes::get_deck,
-                api::routes::new_game,
-            ],
-        )
-        .launch();
+    let string = json.to_string();
+
+    let jval = JsonValue::from(serde_json::from_str::<serde_json::value::Value>(json).unwrap());
+
+    println!("{:?}", CardSelection::from_json(jval));
+
+    /*    rocket::ignite()
+    .attach(common::GamesDbConn::fairing())
+    .mount(
+        "/",
+        routes![
+            api::routes::cards_by_filter,
+            api::routes::cards_by_suit,
+            api::routes::cards_by_value,
+            api::routes::cards_random,
+            api::routes::cards_top,
+            api::routes::cards_bottom,
+            api::routes::get_game,
+            api::routes::get_pile,
+            api::routes::get_deck,
+            api::routes::new_game,
+        ],
+    )
+    .launch();
+    */
 }

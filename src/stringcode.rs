@@ -13,9 +13,22 @@ pub struct StringCodes<T: HasStringCode> {
     _inner: Vec<T>,
 }
 
+use serde_json::value::Value;
 impl<T: HasStringCode + Eq> StringCodes<T> {
     pub fn new() -> Self {
         StringCodes { _inner: Vec::new() }
+    }
+
+    pub fn from_json(json: Value) -> Option<Self> {
+        if let Value::Array(values) = json {
+            let mut result: Vec<T> = Vec::new();
+            for s in values {
+                result.push(T::from_str(s.as_str()?.to_string())?)
+            }
+            Some(StringCodes { _inner: result })
+        } else {
+            None
+        }
     }
 
     pub fn from_str(s: String) -> Option<Self> {
