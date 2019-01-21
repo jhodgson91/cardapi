@@ -83,9 +83,3 @@ pub fn cards_by_filter(suits: StringCodes<CardSuit>, values: StringCodes<CardVal
     let cards = CardSelection::from_all(CardSelection::Filter { suits, values });
     format!("Cards: {:?}", cards)
 }
-
-/*
-#[post("/cards", format="application/json", data="<cards>")]
-pub fn cards_from_json(cards: CardSelection) {
-
-}*/

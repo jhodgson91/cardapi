@@ -1,5 +1,7 @@
 use super::*;
 
+use serde::*;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CardSuit {
     Hearts,
@@ -27,5 +29,23 @@ impl HasStringCode for CardSuit {
             CardSuit::Diamonds => "D",
         };
         s.to_string()
+    }
+}
+
+impl Serialize for CardSuit {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_str().as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for CardSuit {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(super::CodeVisitor::<Self>::new())
     }
 }

@@ -95,13 +95,13 @@ impl CardSelection {
 // Always use a limit to prevent DoS attacks.
 const LIMIT: u64 = 256;
 
-use rocket_contrib::json::{JsonError, JsonValue};
+use serde_json::json;
+use serde_json::Value;
 use std::fmt::Display;
-use std::io::{Error, ErrorKind};
 
 impl super::HasJsonValue for CardSelection {
-    fn from_json(json: JsonValue) -> Result<Self, JsonError<'static>> {
-        if let Some(o) = json.as_object() {
+    fn from_json(json: Value) -> Option<Self> {
+        if let Value::Object(o) = json {
             let valid_keys = (
                 o.get("suits"),
                 o.get("values"),
@@ -112,65 +112,44 @@ impl super::HasJsonValue for CardSelection {
 
             let selection = match valid_keys {
                 (Some(suits), Some(values), None, None, None) => CardSelection::Filter {
-                    suits: StringCodes::from_json(suits.clone()).unwrap(),
-                    values: StringCodes::from_json(values.clone()).unwrap(),
+                    suits: serde_json::from_value(suits.clone()).ok()?,
+                    values: serde_json::from_value(values.clone()).ok()?,
                 },
                 (Some(suits), None, None, None, None) => CardSelection::Filter {
-                    suits: StringCodes::from_json(suits.clone()).unwrap(),
+                    suits: serde_json::from_value(suits.clone()).ok()?,
                     values: StringCodes::new(),
                 },
                 (None, Some(values), None, None, None) => CardSelection::Filter {
                     suits: StringCodes::new(),
-                    values: StringCodes::from_json(values.clone()).unwrap(),
+                    values: serde_json::from_value(values.clone()).ok()?,
                 },
                 (None, None, Some(count), None, None) => {
-                    CardSelection::Random(count.as_u64().unwrap() as usize)
+                    CardSelection::Random(count.as_u64()? as usize)
                 }
                 (None, None, None, Some(count), None) => {
-                    CardSelection::Top(count.as_u64().unwrap() as usize)
+                    CardSelection::Top(count.as_u64()? as usize)
                 }
                 (None, None, None, None, Some(count)) => {
-                    CardSelection::Bottom(count.as_u64().unwrap() as usize)
+                    CardSelection::Bottom(count.as_u64()? as usize)
                 }
                 _ => CardSelection::Empty,
             };
-            Ok(selection)
+            Some(selection)
         } else {
-            Err(JsonError::Io(Error::new(
-                ErrorKind::InvalidInput,
-                "Invalid input to CardSelection::to_json",
-            )))
+            None
         }
     }
 
-    fn to_json(&self) -> JsonValue {
-        json!({})
+    fn to_json(&self) -> Value {
+        match self {
+            CardSelection::Filter { suits, values } => json!({
+                "suits": suits,
+                "values": values,
+            }),
+            CardSelection::Random(count) => json!({ "random": count }),
+            CardSelection::Bottom(count) => json!({ "bottom": count }),
+            CardSelection::Top(count) => json!({ "top": count }),
+            _ => json!({}),
+        }
     }
 }
-
-use rocket::data::{self, FromDataSimple};
-use rocket::http::{ContentType, Status};
-use rocket::{Data, Outcome, Outcome::*, Request};
-use std::io::Read;
-
-/*
-impl FromDataSimple for CardSelection {
-    type Error = String;
-
-    fn from_data(req: &Request, data: Data) -> Outcome<Self, String> {
-        let content_type = ContentType::JSON;
-        if (req.content_type() != Some(&content_type)) {
-            return Outcome::Forward(data);
-        }
-
-        // Read the data into a String.
-        let mut string = String::new();
-        if let Err(e) = data.open().take(LIMIT).read_to_string(&mut string) {
-            return Failure((Status::InternalServerError, format!("{:?}", e)));
-        }
-
-        let json = json!({ "value": string });
-
-    }
-}
-*/

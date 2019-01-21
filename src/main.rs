@@ -20,12 +20,12 @@ mod models;
 mod schema;
 mod stringcode;
 mod common {
-    use rocket_contrib::json::{JsonError, JsonValue};
+    use serde_json::Value;
     pub trait HasJsonValue {
-        fn from_json(json: JsonValue) -> Result<Self, JsonError<'static>>
+        fn from_json(json: Value) -> Option<Self>
         where
             Self: std::marker::Sized;
-        fn to_json(&self) -> JsonValue;
+        fn to_json(&self) -> Value;
     }
 
     #[derive(Debug)]
@@ -72,9 +72,11 @@ use stringcode::StringCodes;
 fn main() {
     let string = json.to_string();
 
-    let jval = JsonValue::from(serde_json::from_str::<serde_json::value::Value>(json).unwrap());
+    let jval = serde_json::from_str::<serde_json::value::Value>(json).unwrap();
 
-    println!("{:?}", CardSelection::from_json(jval));
+    let selection = CardSelection::from_json(jval).unwrap();
+    println!("{:?}", selection);
+    println!("{:?}", selection.to_json());
 
     /*    rocket::ignite()
     .attach(common::GamesDbConn::fairing())

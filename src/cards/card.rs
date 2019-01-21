@@ -1,6 +1,5 @@
 use super::*;
 
-use serde::de::*;
 use serde::*;
 
 #[derive(Clone, Eq, PartialEq)]
@@ -41,30 +40,11 @@ impl Serialize for Card {
     }
 }
 
-struct CardVisitor;
-impl<'de> Visitor<'de> for CardVisitor {
-    type Value = Card;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a card code")
-    }
-
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        match Card::from_str(value.to_string()) {
-            Some(card) => Ok(card),
-            None => Err(E::custom("Invalid card code")),
-        }
-    }
-}
-
 impl<'de> Deserialize<'de> for Card {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_str(CardVisitor)
+        deserializer.deserialize_str(super::CodeVisitor::<Self>::new())
     }
 }
