@@ -51,15 +51,11 @@ mod common {
 
 }
 
-const json: &'static str = "{ \"filter\": {
-    \"suits\": [\"C\",\"H\"],
-    \"values\": [\"A\",\"2\"]
-  }}";
-
-use serde_json::Value;
-
 use cards::CardSelection;
 fn main() {
+    let s = CardSelection::Empty;
+    println!("{}", serde_json::to_string_pretty(&s).unwrap());
+
     rocket::ignite()
         .attach(common::GamesDbConn::fairing())
         .mount(
