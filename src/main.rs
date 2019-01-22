@@ -61,17 +61,11 @@ fn main() {
         .mount(
             "/",
             routes![
-                api::routes::cards_by_filter,
-                api::routes::cards_by_suit,
-                api::routes::cards_by_value,
-                api::routes::cards_random,
-                api::routes::cards_top,
-                api::routes::cards_bottom,
                 api::routes::get_game,
                 api::routes::get_pile,
                 api::routes::get_deck,
                 api::routes::new_game,
-                api::routes::cards_from_json,
+                api::routes::cards,
             ],
         )
         .launch();
