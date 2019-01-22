@@ -3,7 +3,8 @@ use rand::thread_rng;
 
 use super::*;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
 pub enum CardSelection {
     Empty,
     All(bool),
@@ -92,64 +93,30 @@ impl CardSelection {
     }
 }
 
-// Always use a limit to prevent DoS attacks.
 const LIMIT: u64 = 256;
 
-use serde_json::json;
-use serde_json::Value;
-use std::fmt::Display;
+use rocket::data::{self, FromDataSimple};
+use rocket::http::{ContentType, Status};
+use rocket::{Data, Outcome, Outcome::*, Request};
+use std::io::Read;
 
-impl super::HasJsonValue for CardSelection {
-    fn from_json(json: Value) -> Option<Self> {
-        if let Value::Object(o) = json {
-            let valid_keys = (
-                o.get("suits"),
-                o.get("values"),
-                o.get("random"),
-                o.get("top"),
-                o.get("bottom"),
-            );
+impl FromDataSimple for CardSelection {
+    type Error = String;
 
-            let selection = match valid_keys {
-                (Some(suits), Some(values), None, None, None) => CardSelection::Filter {
-                    suits: serde_json::from_value(suits.clone()).ok()?,
-                    values: serde_json::from_value(values.clone()).ok()?,
-                },
-                (Some(suits), None, None, None, None) => CardSelection::Filter {
-                    suits: serde_json::from_value(suits.clone()).ok()?,
-                    values: StringCodes::new(),
-                },
-                (None, Some(values), None, None, None) => CardSelection::Filter {
-                    suits: StringCodes::new(),
-                    values: serde_json::from_value(values.clone()).ok()?,
-                },
-                (None, None, Some(count), None, None) => {
-                    CardSelection::Random(count.as_u64()? as usize)
-                }
-                (None, None, None, Some(count), None) => {
-                    CardSelection::Top(count.as_u64()? as usize)
-                }
-                (None, None, None, None, Some(count)) => {
-                    CardSelection::Bottom(count.as_u64()? as usize)
-                }
-                _ => CardSelection::Empty,
-            };
-            Some(selection)
-        } else {
-            None
+    fn from_data(req: &Request, data: Data) -> data::Outcome<Self, String> {
+        let person_ct = ContentType::JSON;
+        if req.content_type() != Some(&person_ct) {
+            return Outcome::Forward(data);
         }
-    }
 
-    fn to_json(&self) -> Value {
-        match self {
-            CardSelection::Filter { suits, values } => json!({
-                "suits": suits,
-                "values": values,
-            }),
-            CardSelection::Random(count) => json!({ "random": count }),
-            CardSelection::Bottom(count) => json!({ "bottom": count }),
-            CardSelection::Top(count) => json!({ "top": count }),
-            _ => json!({}),
+        let mut string = String::new();
+        if let Err(e) = data.open().take(LIMIT).read_to_string(&mut string) {
+            return Failure((Status::InternalServerError, format!("{:?}", e)));
+        }
+
+        match serde_json::from_str::<CardSelection>(string.as_str()) {
+            Ok(result) => Outcome::Success(result),
+            Err(e) => Failure((Status::InternalServerError, format!("{:?}", e))),
         }
     }
 }

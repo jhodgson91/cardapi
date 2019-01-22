@@ -83,3 +83,9 @@ pub fn cards_by_filter(suits: StringCodes<CardSuit>, values: StringCodes<CardVal
     let cards = CardSelection::from_all(CardSelection::Filter { suits, values });
     format!("Cards: {:?}", cards)
 }
+
+#[post("/cards", data = "<selection>")]
+pub fn cards_from_json(selection: CardSelection) -> JsonValue {
+    let cards = CardCollection::from(selection);
+    JsonValue::from(serde_json::to_value(cards).unwrap())
+}

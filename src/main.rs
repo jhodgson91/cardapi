@@ -20,13 +20,6 @@ mod models;
 mod schema;
 mod stringcode;
 mod common {
-    use serde_json::Value;
-    pub trait HasJsonValue {
-        fn from_json(json: Value) -> Option<Self>
-        where
-            Self: std::marker::Sized;
-        fn to_json(&self) -> Value;
-    }
 
     #[derive(Debug)]
     pub enum CardAPIError {
@@ -58,43 +51,32 @@ mod common {
 
 }
 
-const json: &'static str = "{
+const json: &'static str = "{ \"filter\": {
     \"suits\": [\"C\",\"H\"],
     \"values\": [\"A\",\"2\"]
-  }";
+  }}";
 
 use serde_json::Value;
 
 use cards::CardSelection;
-use common::HasJsonValue;
-use rocket_contrib::json::JsonValue;
-use stringcode::StringCodes;
 fn main() {
-    let string = json.to_string();
-
-    let jval = serde_json::from_str::<serde_json::value::Value>(json).unwrap();
-
-    let selection = CardSelection::from_json(jval).unwrap();
-    println!("{:?}", selection);
-    println!("{:?}", selection.to_json());
-
-    /*    rocket::ignite()
-    .attach(common::GamesDbConn::fairing())
-    .mount(
-        "/",
-        routes![
-            api::routes::cards_by_filter,
-            api::routes::cards_by_suit,
-            api::routes::cards_by_value,
-            api::routes::cards_random,
-            api::routes::cards_top,
-            api::routes::cards_bottom,
-            api::routes::get_game,
-            api::routes::get_pile,
-            api::routes::get_deck,
-            api::routes::new_game,
-        ],
-    )
-    .launch();
-    */
+    rocket::ignite()
+        .attach(common::GamesDbConn::fairing())
+        .mount(
+            "/",
+            routes![
+                api::routes::cards_by_filter,
+                api::routes::cards_by_suit,
+                api::routes::cards_by_value,
+                api::routes::cards_random,
+                api::routes::cards_top,
+                api::routes::cards_bottom,
+                api::routes::get_game,
+                api::routes::get_pile,
+                api::routes::get_deck,
+                api::routes::new_game,
+                api::routes::cards_from_json,
+            ],
+        )
+        .launch();
 }
