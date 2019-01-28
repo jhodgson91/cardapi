@@ -6,7 +6,7 @@ use rocket::request::FromFormValue;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct StringCodes<T: HasStringCode> {
     _inner: Vec<T>,
 }

@@ -4,6 +4,7 @@ use super::models::HasModel;
 use super::stringcode::StringCodes;
 
 use super::common::*;
+use super::routedata::DrawData;
 
 use rocket_contrib::json::JsonValue;
 
@@ -24,7 +25,7 @@ pub fn get_game(conn: GamesDbConn, id: String) -> Option<JsonValue> {
 pub fn get_deck(conn: GamesDbConn, id: String) -> Option<JsonValue> {
     let game = Game::load(&conn, id).ok()?;
     Some(json!({
-        "deck": game.deck.cards()
+        "deck": game.deck()
     }))
 }
 
@@ -39,11 +40,32 @@ pub fn get_pile(conn: GamesDbConn, id: String, name: String) -> Option<JsonValue
         game.get_pile(&name)
     }?;
 
-    Some(json!({name: pile.cards()}))
+    Some(json!({ name: pile }))
 }
 
-#[put("/cards", data = "<selection>")]
-pub fn cards(selection: CardSelection) -> Option<JsonValue> {
-    let cards = CardCollection::from(selection);
-    Some(JsonValue::from(serde_json::to_value(cards).ok()?))
+use rocket_contrib::json::Json;
+
+#[put("/game/<id>/<name>/draw", data = "<drawdata>")]
+pub fn draw_from_pile(
+    conn: GamesDbConn,
+    id: String,
+    name: String,
+    drawdata: Json<DrawData>,
+) -> Option<JsonValue> {
+    let mut game = Game::load(&conn, id).ok()?;
+    let from = if name == "deck" {
+        CollectionType::Deck
+    } else {
+        CollectionType::Pile(name)
+    };
+
+    let to = if drawdata.destination == "deck" {
+        CollectionType::Deck
+    } else {
+        CollectionType::Pile(drawdata.destination.clone())
+    };
+
+    game.move_cards(from, to, drawdata.selection.clone()).ok()?;
+    game.save(&conn);
+    Some(game.into())
 }
