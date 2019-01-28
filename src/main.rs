@@ -26,6 +26,9 @@ mod common {
         DieselError(diesel::result::Error),
         NotFound,
         AlreadyExists,
+        NotEnoughCards,
+        CardNotInCollection,
+        CardAlreadyInCollection,
     }
 
     impl From<diesel::result::Error> for CardAPIError {
@@ -43,6 +46,8 @@ mod common {
     pub struct GamesDbConn(diesel::SqliteConnection);
 
 }
+
+use cards::{CardCollection, CardSelection};
 
 fn main() {
     rocket::ignite()

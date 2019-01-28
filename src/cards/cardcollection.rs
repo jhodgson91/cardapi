@@ -1,20 +1,13 @@
-use super::cardselection::*;
+use super::*;
 
-use super::CardAPIError;
-use super::{Card, CardSuit, CardValue};
 use std::slice::Iter;
-
-use rand::seq::IteratorRandom;
-use rand::thread_rng;
-
-use super::{HasStringCode, StringCodes};
 
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Clone, Debug)]
 pub struct CardCollection {
-    pub(super) cards: Vec<Card>,
+    pub(self) cards: Vec<Card>,
 }
 
 impl CardCollection {
@@ -45,9 +38,18 @@ impl CardCollection {
     }
     pub fn draw(
         &mut self,
-        selection: CardSelection,
+        selection: &CardSelection,
         into: &mut CardCollection,
     ) -> Result<(), CardAPIError> {
+        let mut to_draw = CardCollection::select_cards(&self.cards, selection)?;
+
+        if self.cards.iter().filter(|c| to_draw.contains(c)).count() == to_draw.len()
+            && into.cards.iter().filter(|c| to_draw.contains(c)).count() == 0
+        {
+            self.cards.retain(|c| !to_draw.contains(&c));
+            into.cards.append(&mut to_draw);
+        }
+
         Ok(())
     }
 
@@ -55,70 +57,82 @@ impl CardCollection {
         self.cards.iter()
     }
 
-    fn filter_cards(cards: &mut Vec<Card>, selection: CardSelection) -> Vec<Card> {
+    fn select_cards(
+        cards: &Vec<Card>,
+        selection: &CardSelection,
+    ) -> Result<Vec<Card>, CardAPIError> {
         match selection {
-            CardSelection::Empty => Vec::new(),
-            CardSelection::All(shuffled) => CardCollection::apply_all(cards, shuffled),
-            CardSelection::Random(n) => CardCollection::apply_random(cards, n),
-            CardSelection::Bottom(n) => CardCollection::apply_bottom(cards, n),
-            CardSelection::Top(n) => CardCollection::apply_top(cards, n),
+            CardSelection::Empty => Ok(Vec::new()),
+            CardSelection::All(shuffled) => CardCollection::select_all(cards, shuffled),
+            CardSelection::Random(n) => CardCollection::select_random(cards, n),
+            CardSelection::Bottom(n) => CardCollection::select_bottom(cards, n),
+            CardSelection::Top(n) => CardCollection::select_top(cards, n),
             CardSelection::Filter { suits, values } => {
-                CardCollection::apply_filter(cards, suits, values)
+                CardCollection::select_filter(cards, suits, values)
             }
-            CardSelection::Cards(collection) => {
-                cards.retain(|card| !collection.cards.contains(&card));
-                collection.cards
-            }
+            CardSelection::Cards(collection) => Ok(collection.cards.clone()),
         }
     }
 
-    fn apply_all(cards: &mut Vec<Card>, shuffled: bool) -> Vec<Card> {
-        let result = cards
-            .iter()
-            .cloned()
-            .choose_multiple(&mut thread_rng(), cards.len());
-        *cards = Vec::new();
-        result
+    fn select_all(from: &Vec<Card>, shuffled: &bool) -> Result<Vec<Card>, CardAPIError> {
+        if *shuffled {
+            CardCollection::select_random(from, &from.len())
+        } else {
+            println!("this ran...");
+            Ok(from.clone())
+        }
     }
 
-    fn apply_random(cards: &mut Vec<Card>, num: usize) -> Vec<Card> {
-        let result = cards
-            .iter()
-            .cloned()
-            .choose_multiple(&mut thread_rng(), num);
-        cards.retain(|c| !result.contains(&c));
-        result
+    fn select_random(from: &Vec<Card>, n: &usize) -> Result<Vec<Card>, CardAPIError> {
+        use rand::seq::SliceRandom;
+        use rand::thread_rng;
+
+        if *n <= from.len() {
+            Ok(from
+                .as_slice()
+                .choose_multiple(&mut thread_rng(), *n)
+                .cloned()
+                .collect())
+        } else {
+            Err(CardAPIError::NotEnoughCards)
+        }
     }
 
-    fn apply_top(cards: &mut Vec<Card>, n: usize) -> Vec<Card> {
-        let start = if n > cards.len() { 0 } else { cards.len() - n };
-        let result = cards[start..].to_vec();
-        cards.retain(|c| !result.contains(&c));
-        result
+    fn select_top(from: &Vec<Card>, n: &usize) -> Result<Vec<Card>, CardAPIError> {
+        if (*n <= from.len()) {
+            let start = if *n > from.len() { 0 } else { from.len() - n };
+            Ok(from[start..].to_vec())
+        } else {
+            Err(CardAPIError::NotEnoughCards)
+        }
     }
 
-    fn apply_bottom(cards: &mut Vec<Card>, n: usize) -> Vec<Card> {
-        let end = std::cmp::min(n, cards.len());
-        let result = cards[..end].to_vec();
-        cards.retain(|c| !result.contains(&c));
-        result
+    fn select_bottom(from: &Vec<Card>, n: &usize) -> Result<Vec<Card>, CardAPIError> {
+        if *n < from.len() {
+            let end = std::cmp::min(*n, from.len());
+            Ok(from[..end].to_vec())
+        } else {
+            Err(CardAPIError::NotEnoughCards)
+        }
     }
 
-    fn apply_filter(
-        cards: &mut Vec<Card>,
-        suits: StringCodes<CardSuit>,
-        values: StringCodes<CardValue>,
-    ) -> Vec<Card> {
-        let result: Vec<Card> = cards
-            .iter()
-            .filter(|c| {
-                (suits.len() == 0 || suits.contains(&c.suit))
-                    && (values.len() == 0 || values.contains(&c.value))
-            })
-            .cloned()
-            .collect();
-        cards.retain(|c| !result.contains(&c));
-        result
+    fn select_filter(
+        from: &Vec<Card>,
+        suits: &StringCodes<CardSuit>,
+        values: &StringCodes<CardValue>,
+    ) -> Result<Vec<Card>, CardAPIError> {
+        let test_suit = |c: &Card| suits.len() == 0 || suits.contains(&c.suit);
+        let test_value = |c: &Card| values.len() == 0 || values.contains(&c.value);
+
+        let expected = suits.len() * values.len();
+
+        let filtered = from.iter().filter(|&c| test_suit(c) && test_value(c));
+
+        if filtered.clone().count() >= expected {
+            Ok(filtered.cloned().collect())
+        } else {
+            Err(CardAPIError::CardNotInCollection)
+        }
     }
 }
 
@@ -175,13 +189,8 @@ impl<'de> Deserialize<'de> for CardCollection {
 
 impl From<CardSelection> for CardCollection {
     fn from(selection: CardSelection) -> Self {
-        let mut cards = super::CARD_CODES
-            .to_vec()
-            .iter()
-            .map(|card| Card::from_str(card.to_string()).unwrap())
-            .collect();
         CardCollection {
-            cards: CardCollection::filter_cards(&mut cards, selection),
+            cards: CardCollection::select_cards(&mut ALL_CARDS(), &selection).unwrap(),
         }
     }
 }

@@ -31,22 +31,27 @@ impl Game {
         }
     }
 
-    pub fn move_cards(
+    pub fn draw(
         &mut self,
         from: CollectionType,
         to: CollectionType,
-        selection: CardSelection,
+        selection: &CardSelection,
     ) -> Result<(), CardAPIError> {
-        if self.verify_move(&from, &to, &selection) {
-            let mut from_collection = self.get_collection_mut(&from).unwrap();
-            let mut to_collection = self.get_collection_mut(&to).unwrap();
+        let collections = match (from, to) {
+            (CollectionType::Deck, CollectionType::Pile(s)) => (
+                &mut self.deck,
+                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?,
+            ),
+            (CollectionType::Pile(s), CollectionType::Deck) => (
+                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?,
+                &mut self.deck,
+            ),
+            _ => return Err(CardAPIError::NotFound),
+        };
 
-            from_collection.draw(selection, to_collection);
+        collections.0.draw(selection, collections.1)?;
 
-            Ok(())
-        } else {
-            Err(CardAPIError::NotFound)
-        }
+        Ok(())
     }
 
     pub fn deck(&self) -> &CardCollection {

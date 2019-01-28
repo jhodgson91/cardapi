@@ -65,7 +65,7 @@ pub fn draw_from_pile(
         CollectionType::Pile(drawdata.destination.clone())
     };
 
-    game.move_cards(from, to, drawdata.selection.clone()).ok()?;
+    let res = game.draw(from, to, &drawdata.selection).ok()?;
     game.save(&conn);
     Some(game.into())
 }
