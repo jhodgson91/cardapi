@@ -6,6 +6,7 @@ use diesel::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
+use std::borrow::BorrowMut;
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::ops::DerefMut;
@@ -22,7 +23,7 @@ pub struct Game {
     pub id: String,
 
     deck: CardCollection,
-    piles: HashMap<String, CardCollection>,
+    piles: HashMap<String, RefCell<CardCollection>>,
 }
 
 impl Game {
@@ -40,24 +41,27 @@ impl Game {
         to: CollectionType,
         selection: &CardSelection,
     ) -> Result<(), CardAPIError> {
-        let ref_a = Rc::new(&self.piles);
-        let ref_b = Rc::clone(&ref_a);
-
         match (from, to) {
             (CollectionType::Deck, CollectionType::Pile(s)) => self.deck.draw(
                 selection,
-                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?,
+                &mut self
+                    .piles
+                    .get(&s)
+                    .ok_or(CardAPIError::NotFound)?
+                    .borrow_mut(),
             ),
             (CollectionType::Pile(s), CollectionType::Deck) => self
                 .piles
-                .get_mut(&s)
+                .get(&s)
                 .ok_or(CardAPIError::NotFound)?
+                .borrow_mut()
                 .draw(selection, &mut self.deck),
             (CollectionType::Pile(s), CollectionType::Pile(t)) => {
-                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?.draw(
-                    selection,
-                    self.piles.get_mut(&t).ok_or(CardAPIError::NotFound)?,
-                )
+                let p = &mut self.piles;
+                let mut p1 = p.get(&s).ok_or(CardAPIError::NotFound)?.borrow_mut();
+                let mut p2 = p.get(&t).ok_or(CardAPIError::NotFound)?.borrow_mut();
+
+                p1.draw(selection, &mut p2)
             }
             _ => return Err(CardAPIError::NotFound),
         };
@@ -70,10 +74,10 @@ impl Game {
     }
 
     pub fn new_pile(&mut self, name: String) {
-        self.piles.insert(name, CardCollection::new());
+        self.piles.insert(name, RefCell::new(CardCollection::new()));
     }
 
-    pub fn get_pile(&self, name: &String) -> Option<&CardCollection> {
+    pub fn get_pile(&self, name: &String) -> Option<&RefCell<CardCollection>> {
         self.piles.get(name)
     }
 
