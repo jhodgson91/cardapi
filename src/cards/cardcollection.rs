@@ -190,7 +190,7 @@ impl<'de> Deserialize<'de> for CardCollection {
 impl From<CardSelection> for CardCollection {
     fn from(selection: CardSelection) -> Self {
         CardCollection {
-            cards: CardCollection::select_cards(&mut ALL_CARDS(), &selection).unwrap(),
+            cards: CardCollection::select_cards(&ALL_CARDS(), &selection).unwrap(),
         }
     }
 }
