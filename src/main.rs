@@ -47,8 +47,6 @@ mod common {
 
 }
 
-use cards::{CardCollection, CardSelection};
-
 fn main() {
     rocket::ignite()
         .attach(common::GamesDbConn::fairing())

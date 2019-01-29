@@ -6,7 +6,10 @@ use diesel::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
+use std::ops::DerefMut;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub enum CollectionType {
@@ -31,25 +34,33 @@ impl Game {
         }
     }
 
-    pub fn draw(
+    pub fn draw<'a>(
         &mut self,
         from: CollectionType,
         to: CollectionType,
         selection: &CardSelection,
     ) -> Result<(), CardAPIError> {
-        let collections = match (from, to) {
-            (CollectionType::Deck, CollectionType::Pile(s)) => (
-                &mut self.deck,
+        let ref_a = Rc::new(&self.piles);
+        let ref_b = Rc::clone(&ref_a);
+
+        match (from, to) {
+            (CollectionType::Deck, CollectionType::Pile(s)) => self.deck.draw(
+                selection,
                 self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?,
             ),
-            (CollectionType::Pile(s), CollectionType::Deck) => (
-                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?,
-                &mut self.deck,
-            ),
+            (CollectionType::Pile(s), CollectionType::Deck) => self
+                .piles
+                .get_mut(&s)
+                .ok_or(CardAPIError::NotFound)?
+                .draw(selection, &mut self.deck),
+            (CollectionType::Pile(s), CollectionType::Pile(t)) => {
+                self.piles.get_mut(&s).ok_or(CardAPIError::NotFound)?.draw(
+                    selection,
+                    self.piles.get_mut(&t).ok_or(CardAPIError::NotFound)?,
+                )
+            }
             _ => return Err(CardAPIError::NotFound),
         };
-
-        collections.0.draw(selection, collections.1)?;
 
         Ok(())
     }
@@ -68,48 +79,6 @@ impl Game {
 
     pub fn has_pile(&self, name: &String) -> bool {
         self.get_pile(name).is_some()
-    }
-
-    fn verify_move(
-        &self,
-        from: &CollectionType,
-        to: &CollectionType,
-        selection: &CardSelection,
-    ) -> bool {
-        if let (Some(from_collection), Some(to_collection)) =
-            (self.get_collection(from), self.get_collection(to))
-        {
-            match selection {
-                CardSelection::Empty => true,
-                CardSelection::Random(n) | CardSelection::Top(n) | CardSelection::Bottom(n) => {
-                    from_collection.remaining() >= *n
-                }
-                CardSelection::Filter { suits, values } => {
-                    let cards = CardCollection::from(selection.clone());
-                    from_collection.contains_all(&cards) && to_collection.contains_none(&cards)
-                }
-                CardSelection::Cards(cards) => {
-                    from_collection.contains_all(cards) && to_collection.contains_none(cards)
-                }
-                _ => false,
-            }
-        } else {
-            false
-        }
-    }
-
-    fn get_collection(&self, collection: &CollectionType) -> Option<&CardCollection> {
-        match collection {
-            CollectionType::Deck => Some(&self.deck),
-            CollectionType::Pile(name) => self.piles.get(name),
-        }
-    }
-
-    fn get_collection_mut(&mut self, collection: &CollectionType) -> Option<&mut CardCollection> {
-        match collection {
-            CollectionType::Deck => Some(&mut self.deck),
-            CollectionType::Pile(name) => self.piles.get_mut(name),
-        }
     }
 
     fn new_id() -> String {
