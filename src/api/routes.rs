@@ -9,38 +9,38 @@ use super::routedata::DrawData;
 use rocket_contrib::json::JsonValue;
 
 #[get("/game/new")]
-pub fn new_game(conn: GamesDbConn) -> Option<JsonValue> {
+pub fn new_game(conn: GamesDbConn) -> Result<JsonValue, CardAPIError> {
     let game = Game::new();
-    game.save(&conn).ok()?;
-    Some(game.into())
+    game.save(&conn)?;
+    Ok(game.into())
 }
 
 #[get("/game/<id>")]
-pub fn get_game(conn: GamesDbConn, id: String) -> Option<JsonValue> {
-    let game = Game::load(&conn, id).ok()?;
-    Some(JsonValue::from(serde_json::to_value(game).ok()?))
+pub fn get_game(conn: GamesDbConn, id: String) -> Result<JsonValue, CardAPIError> {
+    let game = Game::load(&conn, id)?;
+    Ok(game.into())
 }
 
 #[get("/game/<id>/deck", rank = 1)]
-pub fn get_deck(conn: GamesDbConn, id: String) -> Option<JsonValue> {
-    let game = Game::load(&conn, id).ok()?;
-    Some(json!({
+pub fn get_deck(conn: GamesDbConn, id: String) -> Result<JsonValue, CardAPIError> {
+    let game = Game::load(&conn, id)?;
+    Ok(json!({
         "deck": game.deck()
     }))
 }
 
 #[get("/game/<id>/<name>", rank = 2)]
-pub fn get_pile(conn: GamesDbConn, id: String, name: String) -> Option<JsonValue> {
-    let mut game = Game::load(&conn, id).ok()?;
+pub fn get_pile(conn: GamesDbConn, id: String, name: String) -> Result<JsonValue, CardAPIError> {
+    let mut game = Game::load(&conn, id)?;
     let pile = if game.has_pile(&name) {
         game.get_pile(&name)
     } else {
         game.new_pile(name.clone());
-        game.save(&conn);
+        game.save(&conn)?;
         game.get_pile(&name)
-    }?;
+    };
 
-    Some(json!({ name: pile }))
+    Ok(json!({ name: pile }))
 }
 
 use rocket_contrib::json::Json;
@@ -51,8 +51,8 @@ pub fn draw_from_pile(
     id: String,
     name: String,
     drawdata: Json<DrawData>,
-) -> Option<JsonValue> {
-    let mut game = Game::load(&conn, id).ok()?;
+) -> Result<JsonValue, CardAPIError> {
+    let mut game = Game::load(&conn, id)?;
     let from = if name == "deck" {
         CollectionType::Deck
     } else {
@@ -65,7 +65,7 @@ pub fn draw_from_pile(
         CollectionType::Pile(drawdata.destination.clone())
     };
 
-    let res = game.draw(from, to, &drawdata.selection).ok()?;
+    game.draw(from, to, &drawdata.selection)?;
     game.save(&conn);
-    Some(game.into())
+    Ok(game.into())
 }

@@ -31,6 +31,26 @@ mod common {
         CardAlreadyInCollection,
     }
 
+    use rocket::http::Status;
+    use rocket::request::Request;
+    use rocket::response::{Responder, Response};
+    use std::io::Cursor;
+    impl Responder<'static> for CardAPIError {
+        fn respond_to(self, _: &Request) -> Result<Response<'static>, Status> {
+            match self {
+                CardAPIError::NotFound => Response::build()
+                    .status(Status::raw(404))
+                    .sized_body(Cursor::new("Not found"))
+                    .ok(),
+                CardAPIError::NotEnoughCards => Response::build()
+                    .status(Status::raw(500))
+                    .sized_body(Cursor::new("Not enough cards"))
+                    .ok(),
+                _ => Ok(Response::new()),
+            }
+        }
+    }
+
     impl From<diesel::result::Error> for CardAPIError {
         fn from(e: diesel::result::Error) -> CardAPIError {
             match e {

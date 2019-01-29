@@ -35,7 +35,7 @@ impl Game {
         }
     }
 
-    pub fn draw<'a>(
+    pub fn draw(
         &mut self,
         from: CollectionType,
         to: CollectionType,
@@ -49,7 +49,7 @@ impl Game {
                     .ok_or(CardAPIError::NotFound)?
                     .borrow_mut();
 
-                self.deck.draw(selection, &mut p);
+                self.deck.draw(selection, &mut p)
             }
             (CollectionType::Pile(s), CollectionType::Deck) => {
                 let mut p = self
@@ -57,7 +57,7 @@ impl Game {
                     .get(&s)
                     .ok_or(CardAPIError::NotFound)?
                     .borrow_mut();
-                p.draw(selection, &mut self.deck);
+                p.draw(selection, &mut self.deck)
             }
             (CollectionType::Pile(s), CollectionType::Pile(t)) => {
                 let mut p1 = self
@@ -71,12 +71,10 @@ impl Game {
                     .ok_or(CardAPIError::NotFound)?
                     .borrow_mut();
 
-                p1.draw(selection, &mut p2);
+                p1.draw(selection, &mut p2)
             }
             _ => return Err(CardAPIError::NotFound),
-        };
-
-        Ok(())
+        }
     }
 
     pub fn deck(&self) -> &CardCollection {
