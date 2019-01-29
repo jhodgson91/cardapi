@@ -17,22 +17,6 @@ impl CardCollection {
     pub fn remaining(&self) -> usize {
         self.cards.len()
     }
-    pub fn contains_none(&self, cards: &CardCollection) -> bool {
-        for c in cards.iter() {
-            if self.cards.contains(c) {
-                return false;
-            }
-        }
-        return true;
-    }
-    pub fn contains_all(&self, cards: &CardCollection) -> bool {
-        for c in cards.iter() {
-            if !self.cards.contains(c) {
-                return false;
-            }
-        }
-        return true;
-    }
     pub fn contains(&self, c: &Card) -> bool {
         self.cards.contains(c)
     }
@@ -51,10 +35,6 @@ impl CardCollection {
         }
 
         Ok(())
-    }
-
-    pub fn iter(&self) -> Iter<Card> {
-        self.cards.iter()
     }
 
     fn select_cards(
@@ -136,10 +116,11 @@ impl CardCollection {
     }
 }
 
-impl std::ops::Index<usize> for CardCollection {
-    type Output = Card;
-    fn index(&self, index: usize) -> &Card {
-        self.cards.index(index)
+impl From<CardSelection> for CardCollection {
+    fn from(selection: CardSelection) -> Self {
+        CardCollection {
+            cards: CardCollection::select_cards(&ALL_CARDS(), &selection).unwrap(),
+        }
     }
 }
 
@@ -156,41 +137,33 @@ impl Serialize for CardCollection {
     }
 }
 
-struct CardCollectionVisitor;
-impl<'de> Visitor<'de> for CardCollectionVisitor {
-    type Value = CardCollection;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a card code")
-    }
-    #[inline]
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut vec = Vec::new();
-
-        while let Some(elem) = visitor.next_element()? {
-            vec.push(elem);
-        }
-
-        Ok(CardCollection { cards: vec })
-    }
-}
-
 impl<'de> Deserialize<'de> for CardCollection {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_seq(CardCollectionVisitor)
-    }
-}
+        struct CardCollectionVisitor;
+        impl<'de> Visitor<'de> for CardCollectionVisitor {
+            type Value = CardCollection;
 
-impl From<CardSelection> for CardCollection {
-    fn from(selection: CardSelection) -> Self {
-        CardCollection {
-            cards: CardCollection::select_cards(&ALL_CARDS(), &selection).unwrap(),
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a card code")
+            }
+            #[inline]
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let mut vec = Vec::new();
+
+                while let Some(elem) = visitor.next_element()? {
+                    vec.push(elem);
+                }
+
+                Ok(CardCollection { cards: vec })
+            }
         }
+
+        deserializer.deserialize_seq(CardCollectionVisitor)
     }
 }

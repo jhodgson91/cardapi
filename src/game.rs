@@ -6,11 +6,8 @@ use diesel::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
-use std::borrow::BorrowMut;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ops::DerefMut;
-use std::rc::Rc;
 
 #[derive(Debug)]
 pub enum CollectionType {
