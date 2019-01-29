@@ -42,26 +42,36 @@ impl Game {
         selection: &CardSelection,
     ) -> Result<(), CardAPIError> {
         match (from, to) {
-            (CollectionType::Deck, CollectionType::Pile(s)) => self.deck.draw(
-                selection,
-                &mut self
+            (CollectionType::Deck, CollectionType::Pile(s)) => {
+                let mut p = self
                     .piles
                     .get(&s)
                     .ok_or(CardAPIError::NotFound)?
-                    .borrow_mut(),
-            ),
-            (CollectionType::Pile(s), CollectionType::Deck) => self
-                .piles
-                .get(&s)
-                .ok_or(CardAPIError::NotFound)?
-                .borrow_mut()
-                .draw(selection, &mut self.deck),
-            (CollectionType::Pile(s), CollectionType::Pile(t)) => {
-                let p = &mut self.piles;
-                let mut p1 = p.get(&s).ok_or(CardAPIError::NotFound)?.borrow_mut();
-                let mut p2 = p.get(&t).ok_or(CardAPIError::NotFound)?.borrow_mut();
+                    .borrow_mut();
 
-                p1.draw(selection, &mut p2)
+                self.deck.draw(selection, &mut p);
+            }
+            (CollectionType::Pile(s), CollectionType::Deck) => {
+                let mut p = self
+                    .piles
+                    .get(&s)
+                    .ok_or(CardAPIError::NotFound)?
+                    .borrow_mut();
+                p.draw(selection, &mut self.deck);
+            }
+            (CollectionType::Pile(s), CollectionType::Pile(t)) => {
+                let mut p1 = self
+                    .piles
+                    .get(&s)
+                    .ok_or(CardAPIError::NotFound)?
+                    .borrow_mut();
+                let mut p2 = self
+                    .piles
+                    .get(&t)
+                    .ok_or(CardAPIError::NotFound)?
+                    .borrow_mut();
+
+                p1.draw(selection, &mut p2);
             }
             _ => return Err(CardAPIError::NotFound),
         };
