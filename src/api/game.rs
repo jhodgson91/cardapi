@@ -1,5 +1,5 @@
 use super::cards::*;
-use super::common::*;
+use super::api::*;
 use super::models;
 
 use diesel::prelude::*;
@@ -9,73 +9,45 @@ use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-#[derive(Debug)]
-pub enum CollectionType {
-    Deck,
-    Pile(String),
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Game {
-    pub id: String,
-
-    deck: CardCollection,
+    id: String,
     piles: HashMap<String, RefCell<CardCollection>>,
 }
 
 impl Game {
     pub fn new() -> Game {
+        let mut piles = HashMap::new();
+        piles.insert(String::from("deck"), RefCell::new(CardCollection::from(CardSelection::All(true))));
+
         Game {
             id: Game::new_id(),
-            deck: CardCollection::from(CardSelection::All(true)),
-            piles: HashMap::new(),
+            piles,
         }
+    }
+
+    pub fn id(&self) -> &str {
+        self.id.as_str()
     }
 
     pub fn draw(
         &mut self,
-        from: CollectionType,
-        to: CollectionType,
+        from: &String,
+        to: &String,
         selection: &CardSelection,
     ) -> Result<(), CardAPIError> {
-        match (from, to) {
-            (CollectionType::Deck, CollectionType::Pile(s)) => {
-                let mut p = self
-                    .piles
-                    .get(&s)
-                    .ok_or(CardAPIError::NotFound)?
-                    .borrow_mut();
+        let mut p1 = self
+            .piles
+            .get(from)
+            .ok_or(CardAPIError::NotFound(format!("Pile {}", from.clone())))?
+            .borrow_mut();
+        let mut p2 = self
+            .piles
+            .get(to)
+            .ok_or(CardAPIError::NotFound(format!("Pile: {}", to.clone())))?
+            .borrow_mut();
 
-                self.deck.draw(selection, &mut p)
-            }
-            (CollectionType::Pile(s), CollectionType::Deck) => {
-                let mut p = self
-                    .piles
-                    .get(&s)
-                    .ok_or(CardAPIError::NotFound)?
-                    .borrow_mut();
-                p.draw(selection, &mut self.deck)
-            }
-            (CollectionType::Pile(s), CollectionType::Pile(t)) => {
-                let mut p1 = self
-                    .piles
-                    .get(&s)
-                    .ok_or(CardAPIError::NotFound)?
-                    .borrow_mut();
-                let mut p2 = self
-                    .piles
-                    .get(&t)
-                    .ok_or(CardAPIError::NotFound)?
-                    .borrow_mut();
-
-                p1.draw(selection, &mut p2)
-            }
-            _ => return Err(CardAPIError::NotFound),
-        }
-    }
-
-    pub fn deck(&self) -> &CardCollection {
-        &self.deck
+        p1.draw(selection, &mut p2)
     }
 
     pub fn new_pile(&mut self, name: String) {

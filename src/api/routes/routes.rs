@@ -1,14 +1,8 @@
-use super::cards::*;
-use super::game::*;
-use super::models::HasModel;
-use super::stringcode::StringCodes;
-
-use super::common::*;
-use super::routedata::DrawData;
+use super::*;
 
 use rocket_contrib::json::JsonValue;
 
-#[get("/game/new")]
+#[post("/game/new")]
 pub fn new_game(conn: GamesDbConn) -> Result<JsonValue, CardAPIError> {
     let game = Game::new();
     game.save(&conn)?;
@@ -19,14 +13,6 @@ pub fn new_game(conn: GamesDbConn) -> Result<JsonValue, CardAPIError> {
 pub fn get_game(conn: GamesDbConn, id: String) -> Result<JsonValue, CardAPIError> {
     let game = Game::load(&conn, id)?;
     Ok(game.into())
-}
-
-#[get("/game/<id>/deck", rank = 1)]
-pub fn get_deck(conn: GamesDbConn, id: String) -> Result<JsonValue, CardAPIError> {
-    let game = Game::load(&conn, id)?;
-    Ok(json!({
-        "deck": game.deck()
-    }))
 }
 
 #[get("/game/<id>/<name>", rank = 2)]
@@ -45,7 +31,7 @@ pub fn get_pile(conn: GamesDbConn, id: String, name: String) -> Result<JsonValue
 
 use rocket_contrib::json::Json;
 
-#[put("/game/<id>/<name>/draw", data = "<drawdata>")]
+#[put("/game/<id>/<name>", data = "<drawdata>")]
 pub fn draw_from_pile(
     conn: GamesDbConn,
     id: String,
@@ -53,19 +39,7 @@ pub fn draw_from_pile(
     drawdata: Json<DrawData>,
 ) -> Result<JsonValue, CardAPIError> {
     let mut game = Game::load(&conn, id)?;
-    let from = if name == "deck" {
-        CollectionType::Deck
-    } else {
-        CollectionType::Pile(name)
-    };
-
-    let to = if drawdata.destination == "deck" {
-        CollectionType::Deck
-    } else {
-        CollectionType::Pile(drawdata.destination.clone())
-    };
-
-    game.draw(from, to, &drawdata.selection)?;
+    game.draw(&drawdata.source, &name, &drawdata.selection)?;
     game.save(&conn);
     Ok(game.into())
 }

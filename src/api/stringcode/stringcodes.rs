@@ -11,6 +11,14 @@ pub struct StringCodes<T: HasStringCode> {
     _inner: Vec<T>,
 }
 
+impl<T: HasStringCode> Default for StringCodes<T> {
+    fn default() -> Self {
+        StringCodes {
+            _inner: Vec::new()
+        }
+    }
+}
+
 impl<T: HasStringCode + Eq> StringCodes<T> {
     pub fn new() -> Self {
         StringCodes { _inner: Vec::new() }

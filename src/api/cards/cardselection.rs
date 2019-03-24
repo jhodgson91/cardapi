@@ -1,7 +1,7 @@
+use super::*;
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-
-use super::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
@@ -12,7 +12,9 @@ pub enum CardSelection {
     Bottom(usize),
     Random(usize),
     Filter {
+        #[serde(default)]
         suits: StringCodes<CardSuit>,
+        #[serde(default)]
         values: StringCodes<CardValue>,
     },
     Cards(CardCollection),

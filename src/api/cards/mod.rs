@@ -13,7 +13,7 @@ pub use cardsuit::CardSuit;
 mod cardvalue;
 pub use cardvalue::CardValue;
 
-use super::common::*;
+use super::api::CardAPIError;
 use super::stringcode::*;
 
 const CARD_CODES: &'static [&str] = &[
