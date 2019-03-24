@@ -1,2 +1,2 @@
 [global.databases]
-sqlite_games = { url = "/home/james/Projects/rust/cardapi/db.sqlite" }
+sqlite_games = { url = "./db.sqlite" }
