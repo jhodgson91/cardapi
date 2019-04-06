@@ -4,18 +4,13 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "cargo",
-            "label": "cargo build",
-            "command": "cargo",
-            "args": [
-                "build"
+            "type": "shell",
+            "label": "Deploy",
+            "command": [
+                "./release.sh"
             ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
+            "options": {
+                "cwd": "${workspaceRoot}/release"
             },
             "presentation": {
                 "echo": true,
@@ -23,16 +18,9 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": true
-            }
-        },
-        {
-            "type": "cargo",
-            "label": "cargo run",
-            "command": "cargo",
-            "args": [
-                "run"
-            ]
+                "clear": false
+            },
+            "problemMatcher": []
         }
     ]
 }
